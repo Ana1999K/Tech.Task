@@ -17,17 +17,20 @@ while (count > 0)
     var index = 0;
     for (int i = 0; i < grid.Length - 2; i++)
     {
-        for (int j = 0; j < grid[i].Length - 2; j++)
+        while (index > -1)
         {
-            if (grid[i][j] == '*')
-            {
-                var (endX, endY) = FindPoints(grid, (j, i));
-                if (endX == j || endY == i)
-                    continue;
-                points.Add(new Data(new Point(j, i), new Point(endX, endY)));
-                j = endX;
-            }
+            index = Array.IndexOf(grid[i], '*', index);
+
+            if (index < 0)
+                break;
+
+            var (endX, endY) = FindPoints(grid, (index, i));
+            if (endX != index && endY != i)           
+                points.Add(new Data(new Point(index, i), new Point(endX, endY)));
+            
+            index = endX + 1;
         }
+        index = 0;
     }
 
     Find(points);
@@ -113,11 +116,12 @@ public class Data
     public Point Start;
     public Point End;
     public int K;
-    public double S => Math.Abs(Start.X - End.X) * Math.Abs(Start.Y - End.Y);
+    public double S;
     public Data(Point s, Point e)
     {
         Start = s;
         End = e;
+        S = Math.Abs(Start.X - End.X) * Math.Abs(Start.Y - End.Y);
     }
 }
 
