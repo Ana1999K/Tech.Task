@@ -1,5 +1,4 @@
-﻿
-using var input = new StreamReader(Console.OpenStandardInput());
+﻿using var input = new StreamReader(Console.OpenStandardInput());
 using var output = new StreamWriter(Console.OpenStandardOutput());
 
 var count = int.Parse(input.ReadLine()!);
@@ -25,15 +24,20 @@ while (count > 0)
                 break;
 
             var (endX, endY) = FindPoints(grid, (index, i));
-            if (endX != index && endY != i)           
-                points.Add(new Data(new Point(index, i), new Point(endX, endY)));
+            if (endX != index && endY != i)
+            {
+                var point = new Data(new Point(index, i), new Point(endX, endY));
+                foreach (var p in points.Where(p => InInterval(p, point)))
+                {
+                    point.K++;
+                }
+                points.Add(point);
+            }
             
             index = endX + 1;
         }
         index = 0;
     }
-
-    Find(points);
 
     answers.Add(string.Join(" ", points.OrderBy(r => r.K).Select(r => r.K)));
     count--;
@@ -79,22 +83,6 @@ static (int, int) FindPoints(char[][] grid, (int x, int y) point)
     return (endX, endY);
 }
 
-
-static void Find(List<Data> points)
-{
-    var stack = new Stack<Data>(points.OrderBy(x => x.S));
-
-    while (stack.Count > 0)
-    {
-        var point = stack.Pop();
-
-        foreach (var p in stack.Where(p => InInterval(point, p)))
-        {
-            p.K++;
-        }
-    }
-}
-
 static bool InInterval(Data d, Data d1)
 {
     return d1.Start.X > d.Start.X && d1.Start.X < d.End.X && d1.End.X > d.Start.X && d1.End.X < d.End.X
@@ -103,8 +91,8 @@ static bool InInterval(Data d, Data d1)
 
 public class Point
 {
-    public int X;
-    public int Y;
+    public int X { get; }
+    public int Y { get; }
     public Point(int x, int y)
     {
         X = x; Y = y;
@@ -113,15 +101,13 @@ public class Point
 
 public class Data
 {
-    public Point Start;
-    public Point End;
-    public int K;
-    public double S;
+    public Point Start { get; set; }
+    public Point End { get; set; }
+    public int K { get; set; }
+
     public Data(Point s, Point e)
     {
         Start = s;
         End = e;
-        S = Math.Abs(Start.X - End.X) * Math.Abs(Start.Y - End.Y);
     }
 }
-
