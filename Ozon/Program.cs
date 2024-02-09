@@ -11,7 +11,7 @@ while (count > 0)
     {
         grid[i] = input.ReadLine()!.ToCharArray();
     }
-    var points = new List<Data>();
+    var result = new List<int>();
 
     var index = 0;
     for (int i = 0; i < grid.Length - 2; i++)
@@ -20,26 +20,24 @@ while (count > 0)
         {
             index = Array.IndexOf(grid[i], '*', index);
 
-            if (index < 0)
+            if (index == sizes[1] - 1 || index < 0)
                 break;
 
             var (endX, endY) = FindPoints(grid, (index, i));
             if (endX != index && endY != i)
             {
                 var point = new Data(new Point(index, i), new Point(endX, endY));
-                foreach (var p in points.Where(p => InInterval(p, point)))
-                {
-                    point.K++;
-                }
-                points.Add(point);
+                result.Add(0);
+                result.AddRange(FindNested(grid, point, 0));
+                DeleteFigure(grid, point);
             }
-            
             index = endX + 1;
         }
+
         index = 0;
     }
 
-    answers.Add(string.Join(" ", points.OrderBy(r => r.K).Select(r => r.K)));
+    answers.Add(string.Join(" ", result.OrderBy(r => r)));
     count--;
 }
 
@@ -48,6 +46,54 @@ foreach (var item in answers)
     output.WriteLine(item);
 }
 
+static List<int> FindNested(char[][] grid, Data data, int k)
+{
+    var nested = new List<int>();
+    var startIndex = data.Start.X + 1;
+    var index = startIndex;
+    for (int i = data.Start.Y + 1; i < data.End.Y - 2; i++)
+    {
+        while (index > -1)
+        {
+            index = Array.IndexOf(grid[i], '*', index, data.End.X - index);
+
+            if (index < 0)
+                break;
+
+            var (endX, endY) = FindPoints(grid, (index, i));
+
+            if (endX != index && endY != i)
+            {
+                var point = new Data(new Point(index, i), new Point(endX, endY));
+                var currentK = k + 1;
+                nested.Add(currentK);
+                nested.AddRange(FindNested(grid, point, currentK));
+                DeleteFigure(grid, point);
+            }
+
+            index = endX + 1;
+        }
+
+        index = startIndex;
+    }
+
+    return nested;
+}
+
+static void DeleteFigure(char[][] grid, Data data)
+{
+    for (int i = data.Start.Y; i < data.End.Y; i++)
+    {
+        grid[i][data.Start.X] = '.';
+        grid[i][data.End.X] = '.';
+    }
+
+    for (int i = data.Start.X; i < data.End.X; i++)
+    {
+        grid[data.Start.Y][i] = '.';
+        grid[data.End.Y][i] = '.';
+    }
+}
 
 static (int, int) FindPoints(char[][] grid, (int x, int y) point)
 {
@@ -83,11 +129,6 @@ static (int, int) FindPoints(char[][] grid, (int x, int y) point)
     return (endX, endY);
 }
 
-static bool InInterval(Data d, Data d1)
-{
-    return d1.Start.X > d.Start.X && d1.Start.X < d.End.X && d1.End.X > d.Start.X && d1.End.X < d.End.X
-        && d1.Start.Y > d.Start.Y && d1.Start.Y < d.End.Y && d1.End.Y > d.Start.Y && d1.End.Y < d.End.Y;
-}
 
 public class Point
 {
@@ -103,7 +144,6 @@ public class Data
 {
     public Point Start { get; set; }
     public Point End { get; set; }
-    public int K { get; set; }
 
     public Data(Point s, Point e)
     {
